@@ -4,7 +4,7 @@ description: Constructor
 url: http://luke.opperman.net
 baseurl: ""
 paginate_path: "blog/page:num/"
-permalink: blog/:title/
+permalink: blog/:year/:month/:title/
 
 markdown: redcarpet
 highlighter: pygments
@@ -20,6 +20,6 @@ social:
    github: loppear
    twitter: loppear
    facebook: loppear
-   email: luke@opperman.net
+   email: blog@luke.opperman.net
 
 google_analytics: "UA-64601310-1"
