@@ -1,7 +1,7 @@
-title: Long Haul
-description: Long Form Jekyll theme built with SASS / COMPASS / SUSY
+title: Luke Opperman
+description: Constructor
 
-url: http://brianmaierjr.github.com/long-haul
+url: http://luke.opperman.net
 baseurl: ""
 paginate_path: "blog/page:num/"
 permalink: blog/:title/
@@ -12,16 +12,14 @@ paginate: 5
 
 navigation:
  - title: Home
-   url: /index.html
+   url: /
  - title: About
-   url: /about
- - title: Contact
-   url: /contact
+   url: /about.html
 
 social:
-   github: brianmaierjr
-   twitter: brianmaierjr
-   facebook: brianmaierjr
-   email: brimaidesigns@gmail.com
+   github: loppear
+   twitter: loppear
+   facebook: loppear
+   email: luke@opperman.net
 
-google_analytics: "UA-58263416-1"
+google_analytics: "UA-64601310-1"
