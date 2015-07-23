@@ -16,4 +16,4 @@ We are still developing ways to support saving this often-ephemeral internal com
 
 > I see dialog as supportive of _personal growth_, not of collective wisdom - our collective wisdom will increase as we individually grow.
 
-Annotation in this view is an individual activity (in conversation) with all the variety of perspectives and paths that a diversity of people and times can produce. It is primarily about enriching the process of learning; not directly aiming for global fact-checking or consensus-building but for expanding the range and diversity of connections between ideas that we encounter.
+Annotation in all these views is an individual activity (in conversation) with all the variety of perspectives and paths that a diversity of people and times can produce. It is primarily about enriching the process of learning; not directly aiming for global fact-checking or consensus-building but for expanding the range and diversity of connections between ideas that we encounter.
