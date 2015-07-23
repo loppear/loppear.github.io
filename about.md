@@ -11,7 +11,6 @@ title: About Luke
 <p>Current interests
 <ul>
 <li>Contract or volunteer internet software development projects in the domains of social justice, education, and a distributed decentralized model for the future web.
-<li>Electronic music creation
 <li>Woodworking, woodturning, tree climbing, forestry
 <li>Gardening and permaculture-inspired ecosystem management in middle Georgia.
 <li>Molecular Biology, in particular cell- and genome-level systems of disease.
@@ -19,7 +18,7 @@ title: About Luke
 
 <p>Interests on hold
 <ul>
-<li>Emergency Medicine - I am a NOLS Wilderness EMT.
+<li>Emergency Medicine - I am a NOLS Wilderness EMT-B.
 <li>Artificial Intelligence and Machine Learning
 <li>Semantic Web / RDF / OpenCyc
 </ul>
