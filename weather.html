@@ -386,6 +386,12 @@
          }
      }
 
+     function logForecastProgress(msg) {
+         let el = document.createElement('p');
+         el.textContent = msg
+         document.getElementById('forecasts').appendChild(el);
+     }
+
      
      async function setLocation(latitude, longitude) {
          let url;
@@ -393,9 +399,16 @@
              url = `js/milly.json`
          } else {
              if (!latitude) {
-                 ({latitude, longitude} = (await getCurrentPosition()).coords);                 
+                 try {
+                     logForecastProgress("Getting your location...");
+                     ({latitude, longitude} = (await getCurrentPosition()).coords);
+                 } catch (e) {
+                     logForecastProgress("  error getting location, " + e);
+                 }
+                 
              }
              url = `https://api.weather.gov/points/${latitude},${longitude}`
+             logForecastProgress(`Querying forecast for ${latitude}, ${longitude}...`);
          }
 
          
@@ -403,6 +416,7 @@
          let forecast = await (await fetch(result.properties.forecast)).json()
          let hourly = await (await fetch(result.properties.forecastHourly)).json()
 
+         logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
          displayForecasts(result, forecast, hourly);
      }
@@ -413,7 +427,7 @@
 
      function displayForecasts(result, forecast, hourly) {
          let relativeLocation = result.properties.relativeLocation;
-         let updated = parseDate(forecast.properties.updated);
+         let updated = parseDate(forecast.properties.updateTime || forecast.properties.updated);
          let updateDate = dateFormat(updated);
          
          let heading = document.querySelector('.heading');
@@ -464,17 +478,17 @@
                  period = (day || night);
                  name = period.name;
                  temp = `${period.temperature}&deg;${period.temperatureUnit}`
-                 precip = ` ${period.probabilityOfPrecipitation.value || '0'}%`;
-                 humidity = `${period.relativeHumidity.value}%`;
+                 precip = ` ${period.probabilityOfPrecipitation && period.probabilityOfPrecipitation.value || '0'}%`;
+                 humidity = `${period.relativeHumidity && period.relativeHumidity.value || 'N/A'}%`;
                  wind = `${period.windSpeed} ${period.windDirection}`;
              } else {
                  name = day.name;
                  temp = `${day.temperature}&deg; | ${night.temperature}&deg; ${day.temperatureUnit}`
-                 precip = ` ${day.probabilityOfPrecipitation.value || '0'}%`;
-                 if (night.probabilityOfPrecipitation.value != day.probabilityOfPrecipitation.value) {
+                 precip = ` ${day.probabilityOfPrecipitation && day.probabilityOfPrecipitation.value || '0'}%`;
+                 if (night.probabilityOfPrecipitation && night.probabilityOfPrecipitation.value != day.probabilityOfPrecipitation.value) {
                      precip += `| ${night.probabilityOfPrecipitation.value || '0'}%`;
                  }
-                 humidity = `${day.relativeHumidity.value}% | ${night.relativeHumidity.value}%`;
+                 humidity = `${day.realtiveHumidity && day.relativeHumidity.value || 'N/A'}% | ${night.relativeHumidity && night.relativeHumidity.value || 'N/A'}%`;
                  period = (parseInt(day.windSpeed) > parseInt(night.windSpeed)) ? day : night;
                  wind = `${period.windSpeed} ${period.windDirection}`;
              }
