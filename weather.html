@@ -18,6 +18,12 @@
          padding-left: 0.2em;
      }
 
+     h5 {
+         margin: 5px;
+         text-weight: normal;
+         font-style: italic;
+     }
+
      .links a {
          display: block;
          text-align: center;
@@ -58,6 +64,7 @@
         </div>
       </div>
       <div class="pure-g links locations">
+        <div class="pure-u-1-1"><h5>NWS weather data from api.weather.gov for your current location in a no-ads no-tracking  client-only compact display. Graph ine is temperature, area is precipitation probability Or pick from:</h5></div>
         <div class="pure-u-1-4"><a onclick="setLocation('33.0877','-83.2333')">Milly</a></div>
         <div class="pure-u-1-4"><a onclick="setLocation('41.8819','-87.6277')">Chicago</a></div>
         <div class="pure-u-1-4"><a onclick="setLocation('46.8733','-96.8272')">Fargo</a></div>
@@ -336,10 +343,10 @@
 
      function parseDate(date) {
          // TZ from NWS might be a lie
-         let utc = date.indexOf('+00');
-         if (utc > 0) {
-             date = date.slice(0, date.indexOf('+00'));
-         }
+         //let utc = date.indexOf('+00');
+         //if (utc > 0) {
+         //date = date.slice(0, date.indexOf('+00'));
+         //}
          return Date.parse(date);
      }
 
@@ -397,100 +404,100 @@
      
 
      function displayForecasts(result, forecast, hourly) {
-             let relativeLocation = result.properties.relativeLocation;
-             let updated = parseDate(forecast.properties.updated);
-             let updateDate = dateFormat(updated);
+         let relativeLocation = result.properties.relativeLocation;
+         let updated = parseDate(forecast.properties.updated);
+         let updateDate = dateFormat(updated);
          
          let heading = document.querySelector('.heading');
 
          heading.textContent = `${relativeLocation.properties.city}, ${relativeLocation.properties.state} on ${updateDate}`;
+
+         document.getElementById('forecasts').replaceChildren("")
          
          let periods = forecast.properties.periods;
-             
-             let dayTime = periods[0].isDaytime
          
-             let periodPairs;
-             if (dayTime) {
-                 periodPairs = arrayPairs(periods);
-             } else {
-                 periodPairs = [[null, periods[0]]].concat(arrayPairs(periods.slice(1)));
-             }
+         let dayTime = periods[0].isDaytime
          
-             let temps = hourly.properties.periods.map(h => h.temperature);
-             let tempDomain = [Math.max(...temps), Math.min(...temps)]
+         let periodPairs;
+         if (dayTime) {
+             periodPairs = arrayPairs(periods);
+         } else {
+             periodPairs = [[null, periods[0]]].concat(arrayPairs(periods.slice(1)));
+         }
+         
+         let temps = hourly.properties.periods.map(h => h.temperature);
+         let tempDomain = [Math.max(...temps), Math.min(...temps)]
          
          
-             for (let [day, night] of periodPairs) {
-                 let startTime = parseDate((day || night).startTime);
-                 let endTime = parseDate((night || day).endTime);
-                 let hours = hourly.properties.periods.filter(x => {
-                     let s = x.startTimeParsed = parseDate(x.startTime);
-                     let e = x.endTimeParsed = parseDate(x.endTime);
-                     return s >= startTime && e <= endTime;
-                 })
+         for (let [day, night] of periodPairs) {
+             let startTime = parseDate((day || night).startTime);
+             let endTime = parseDate((night || day).endTime);
+             let hours = hourly.properties.periods.filter(x => {
+                 let s = x.startTimeParsed = parseDate(x.startTime);
+                 let e = x.endTimeParsed = parseDate(x.endTime);
+                 return s >= startTime && e <= endTime;
+             })
 
-                 console.log("hours", hours)
-         
-                 let row = document.createElement('div');
-                 row.setAttribute('class', 'pure-g');
-                 let periodBox = document.createElement('div');
-                 periodBox.setAttribute('class', 'pure-u-1-4');
-                 row.appendChild(periodBox);
-                 let graphBox = document.createElement('div');
-                 graphBox.setAttribute('class', 'graph');
-                 let forecastBox = document.createElement('div');
-                 forecastBox.setAttribute('class', 'pure-u-3-4');
-                 forecastBox.appendChild(graphBox);
-         
-                 row.appendChild(forecastBox);
-         
-                 let period, name, temp, precip, humidity, wind;
-                 if (!day || !night) {
-                     period = (day || night);
-                     name = period.name;
-                     temp = `${period.temperature}&deg;${period.temperatureUnit}`
-                     precip = ` ${period.probabilityOfPrecipitation.value || '0'}%`;
-                     humidity = `${period.relativeHumidity.value}%`;
-                     wind = `${period.windSpeed} ${period.windDirection}`;
-                 } else {
-                     name = day.name;
-                     temp = `${day.temperature}&deg; | ${night.temperature}&deg;` // ${day.temperatureUnit}`
-                     precip = ` ${day.probabilityOfPrecipitation.value || '0'}%`;
-                     if (night.probabilityOfPrecipitation.value != day.probabilityOfPrecipitation.value) {
-                         precip += `| ${night.probabilityOfPrecipitation.value || '0'}%`;
-                     }
-                     humidity = `${day.relativeHumidity.value}% | ${night.relativeHumidity.value}%`;
-                     period = (parseInt(day.windSpeed) > parseInt(night.windSpeed)) ? day : night;
-                     wind = `${period.windSpeed} ${period.windDirection}`;
+             let row = document.createElement('div');
+             row.setAttribute('class', 'pure-g');
+             let periodBox = document.createElement('div');
+             periodBox.setAttribute('class', 'pure-u-1-4');
+             row.appendChild(periodBox);
+             let graphBox = document.createElement('div');
+             graphBox.setAttribute('class', 'graph');
+             let forecastBox = document.createElement('div');
+             forecastBox.setAttribute('class', 'pure-u-3-4');
+             forecastBox.appendChild(graphBox);
+             
+             row.appendChild(forecastBox);
+             
+             let period, name, temp, precip, humidity, wind;
+             if (!day || !night) {
+                 period = (day || night);
+                 name = period.name;
+                 temp = `${period.temperature}&deg;${period.temperatureUnit}`
+                 precip = ` ${period.probabilityOfPrecipitation.value || '0'}%`;
+                 humidity = `${period.relativeHumidity.value}%`;
+                 wind = `${period.windSpeed} ${period.windDirection}`;
+             } else {
+                 name = day.name;
+                 temp = `${day.temperature}&deg; | ${night.temperature}&deg; ${day.temperatureUnit}`
+                 precip = ` ${day.probabilityOfPrecipitation.value || '0'}%`;
+                 if (night.probabilityOfPrecipitation.value != day.probabilityOfPrecipitation.value) {
+                     precip += `| ${night.probabilityOfPrecipitation.value || '0'}%`;
                  }
-                 
-                 let wp = document.createElement('weather-period')
-                 wp.setAttribute('name', name);
-                 wp.setAttribute('temp', temp);
-                 wp.setAttribute('precip', precip);
-                 wp.setAttribute('humidity', humidity);
-                 wp.setAttribute('wind', wind);
-                 periodBox.appendChild(wp);
-         
-                 for (let period of [day, night].filter(n => n)) {
-                     let wf = document.createElement('weather-forecast');
-                     wf.setAttribute('detailed', period.shortForecast);
-                     //wf.setAttribute('icon', `<img src="${period.icon.replace("medium", "small")}" />`);
-                     forecastBox.appendChild(wf);
-                 }
-                 
-                 document.getElementById('forecasts').appendChild(row);
-         
-                 // After in DOM for fixed size
-                 let rect = graphBox.getBoundingClientRect();
-                 let wg = document.createElement('weather-graph');
-                 wg.last = period.number == 14;
-                 wg.hours = hours;
-                 wg.tempDomain = tempDomain;
-                 wg.width = parseInt(rect.width);
-                 wg.height = rect.height + 6;
-                 graphBox.appendChild(wg);
+                 humidity = `${day.relativeHumidity.value}% | ${night.relativeHumidity.value}%`;
+                 period = (parseInt(day.windSpeed) > parseInt(night.windSpeed)) ? day : night;
+                 wind = `${period.windSpeed} ${period.windDirection}`;
              }
+             
+             let wp = document.createElement('weather-period')
+             wp.setAttribute('name', name);
+             wp.setAttribute('temp', temp);
+             wp.setAttribute('precip', precip);
+             wp.setAttribute('humidity', humidity);
+             wp.setAttribute('wind', wind);
+             periodBox.appendChild(wp);
+             
+             for (let period of [day, night].filter(n => n)) {
+                 let wf = document.createElement('weather-forecast');
+                 wf.setAttribute('detailed', period.shortForecast);
+                 //wf.setAttribute('icon', `<img src="${period.icon.replace("medium", "small")}" />`);
+                 forecastBox.appendChild(wf);
+             }
+             
+             document.getElementById('forecasts').appendChild(row);
+             
+             // After in DOM for fixed size
+             let rect = graphBox.getBoundingClientRect();
+             let wg = document.createElement('weather-graph');
+             wg.last = period.number == 14;
+             wg.hours = hours;
+             wg.tempDomain = tempDomain;
+             wg.width = parseInt(rect.width);
+             wg.height = rect.height + 6;
+             graphBox.appendChild(wg);
+         }
      }
 
     </script>
