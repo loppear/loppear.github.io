@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/grids-responsive-min.css">    
+
+    <style>
+
+     .body {
+         font-family: Roboto, Arial, sans-serif;
+     }
+
+     h2 {
+         font-size: 14pt;
+         margin-bottom: 2px;
+         padding-left: 0.2em;
+     }
+
+     .links a {
+         display: block;
+         text-align: center;
+         text-decoration: none;
+         padding: 0.2em;
+         margin: 2px;
+         border: 1px solid #666;
+         border-radius: 0.5em;
+     }
+
+     .locations {
+         display: none;
+     }
+     
+     .graph {
+         position: absolute;
+         width: 100px;
+         height: 100%;
+         /*margin-left: -40px;*/
+         z-index: -1;
+     }
+
+     #forecasts > div {
+         position: relative;
+     }
+
+    </style>
+    
+  </head>
+  <body>
+    <div id="weather">
+      <div class="pure-g">
+        <div class="pure-u-11-12">
+          <h2 class="heading">Loading Weather...</h2>
+        </div>
+        <div class="pur-u-1-12">
+          <h2><button onclick="showLocations()">&#9660;</button></h2>
+        </div>
+      </div>
+      <div class="pure-g links locations">
+        <div class="pure-u-1-4"><a onclick="setLocation('33.0877','-83.2333')">Milly</a></div>
+        <div class="pure-u-1-4"><a onclick="setLocation('41.8819','-87.6277')">Chicago</a></div>
+        <div class="pure-u-1-4"><a onclick="setLocation('46.8733','-96.8272')">Fargo</a></div>
+        <div class="pure-u-1-4"><a onlick="setLocation('45.52', '-122.6819')">Portland</a></div>
+      </div>
+      <div class="pure-g links">
+        <div class="pure-u-1-4"><a href="https://radar.weather.gov">Radar</a></div>
+        <div class="pure-u-1-4"><a href="https://nhc.noaa.gov">NHC</a></div>
+        <div class="pure-u-1-4"><a href="https://www.airnow.gov">AQI</a></div>
+        <div class="pure-u-1-4"><a href="https://swpc.noaa.gov">Space</a></div>
+      </div>
+      <div id="forecasts">
+      </div>  
+    </div>
+
+    <template id="weather-period-template">
+      <div class="period">
+        <div>
+          <span class="name">Today</span>
+          <div class="temp"><span class="hi_temp">75&deg;F</span><span class="lo_temp"></span></div>
+          <div>
+            <div class="precip">75%</div>
+            <div class="wind">11 mph S</div>
+            <div class="humidity"><span class="day_humidity"91%</span><span class="night_humidity"></span></div>
+          </div>
+        </div>
+      </div>
+      <style>
+       .period {
+           border: 1px solid #aaa;
+           border-radius: 0;
+           border-top-left-radius: 0.5em;
+           border-bottom-left-radius: 0.5em;
+           height: 100%;
+       }
+       .period  div {
+           padding: 0.2em;
+
+           text-align: center;
+       }
+
+       .temp {
+           font-weight: bolder;
+       }
+       
+       .precip::before {
+           content: "\1F327 "
+       }
+
+       .humidity::before {
+           content: "\1F4A7 "
+       }
+
+       .wind, .humidity {
+           font-size: smaller;
+       }
+       
+       /* .wind::before {
+          content: "\1F32C "
+          }*/
+      </style>
+      
+    </template>
+
+    <template id="weather-forecast-template">
+      <div class="forecast">
+        <span class="icon">
+        </span>
+        <span class="detailed">
+        </span>
+      </div>
+      <style>
+       .forecast {
+           padding: 0.5em;
+           padding-bottom: 2em;
+       }
+       .forecast  span {
+           font-size: smaller;
+       }
+       .forecast img {
+           vertical-align: top;
+       }
+      </style>
+      
+    </template>
+
+    <template id="weather-graph-template">
+      <style>
+       
+       .bar {
+           height: 8.33%;
+           background-color: #ddd;
+       }
+       .dot {
+           background-color: #ddf;
+           position: absolute;
+           height: 100%;
+       }
+      </style>
+    </template>
+    
+    <script type="module">
+
+     import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";     
+     
+     
+
+     class MyElement extends HTMLElement {
+         template;
+         constructor() {
+             super();
+             this.attachShadow({ mode: "open" });
+         }
+         connectedCallback() {
+             let template = document.getElementById(this.template);
+             this.templateContent = template.content;
+             let contents = this.templateContent.cloneNode(true);
+
+             this.connectedContents(contents);
+             this.shadowRoot.appendChild(contents);
+         }
+         disconnectedCallback() {
+         }
+         attributeChangedCallback() {
+         }
+
+         connectedContents(contents) {
+             
+         }
+     }
+
+     class MyFieldsElement extends MyElement {
+         fields;
+         
+         connectedContents(contents) {
+             for (let f of this.fields) {
+                 let node = contents.querySelector(`.${f}`);
+                 if (node) {
+                     node.innerHTML = this.getAttribute(f);                         
+                 } else {
+                     console.log("no node for ", f)
+                 }
+             }
+         }
+     }
+     
+     customElements.define(
+         "weather-period",
+         class extends MyFieldsElement {
+             template = 'weather-period-template';
+             fields = ['name', 'temp', 'humidity', 'precip', 'wind'];
+         }
+     );
+     customElements.define(
+         "weather-forecast",
+         class extends MyFieldsElement {
+             template = 'weather-forecast-template';
+             fields = ['detailed', 'icon'];
+         }
+     );
+
+     customElements.define(
+         "weather-graph",
+         class extends MyElement {
+             template = 'weather-graph-template';
+             hours = [];
+             width = 100;
+             height = 100;
+             tempDomain = [0,100];
+             blank = {temperature: 0, probabilityOfPrecipitation: {value: 0}};
+             last = false;
+
+             connectedContents(contents) {
+                 let hours = this.hours;
+
+                 while (hours.length < 24) {
+                     let blank = structuredClone(this.blank);
+                     if (this.last) {
+                         blank.endTimeParsed = d3.timeHour.offset(hours.at(-1).endTimeParsed, 1);
+                         hours.push(blank);
+                     } else {
+                         blank.startTimeParsed = d3.timeHour.offset(hours[0].startTimeParsed, -1);
+                         hours.unshift(blank);                         
+                     }
+                 }
+                 
+                 //let thisTemps = hours.map(h => h.temperature);
+                 //let thisTempDomain = [Math.max(...thisTemps), Math.min(...thisTemps)];
+
+                 //let precips = hours.map(h => h.probabilityOfPrecipitation ? h.probabilityOfPrecipitation.value : 0)
+
+                 let margin = 10;
+
+                 const y = d3.scaleTime()
+                             .domain([hours[0].startTimeParsed, hours.at(-1).endTimeParsed])
+                             .range([0, this.height]);
+                 const x = d3.scaleLinear()
+                             .domain(this.tempDomain)
+                             .range([this.width, 0]);
+                 const xH = d3.scaleLinear()
+                              .domain([0,100])
+                              .range([0, this.width]);
+
+
+                 const tempX = d => x(d.temperature);
+                 const tempY = d => y(d.startTimeParsed);
+                 
+                 const line = d3.line()
+                                .y(tempY)
+                                .x(tempX)
+                                .defined(d => d.temperature)
+                 const area = d3.area()
+                                 .x1(d => xH(d.probabilityOfPrecipitation.value))
+                                 .x0(xH(0))
+                                 .y(tempY)
+                                 .defined(d => d.probabilityOfPrecipitation.value)
+                 //.curve(d3.curveBumpY);
+                 
+
+
+                 const svg = d3.create("svg")
+                               .attr("width", this.width)
+                               .attr("height", this.height);
+
+                 //                 svg.append("g")
+                 //                    .attr("transform", `translate(0,${this.height - margin})`)
+                 //                    .call(d3.axisBottom(x));
+                 //                 svg.append("g")
+                 //                    .attr("transform", `translate(${margin},0)`)
+                 //                    .call(d3.axisLeft(y));
+                 
+                 svg.append("path")
+                    .attr("fill", "lightblue")
+                    .attr("d", area(hours));
+                 
+                 svg.append("path")
+                    .attr("d", line(hours))
+                    .attr("stroke", "red")
+                    .attr("fill", "none");
+
+                 //svg.append("g").selectAll("text")
+                 //   .data(hours)
+                 //   .enter()
+                 //   .append("text")
+                 //   .attr("x", tempX)
+                 //   .attr("y", tempY)
+                 //   .attr("fill", "red")
+                 //   .text(d => { if (thisTempDomain.includes(d.temperature)) {return d.temperature}})
+                 //;
+                                    
+                 contents.appendChild(svg.node());
+                 
+             }
+         }
+     );
+     
+    </script>
+
+    <script>
+
+     function parseDate(date) {
+         // TZ from NWS might be a lie
+         let utc = date.indexOf('+00');
+         if (utc > 0) {
+             date = date.slice(0, date.indexOf('+00'));
+         }
+         return Date.parse(date);
+     }
+
+     let dateFormat = new Intl.DateTimeFormat("en-US", {dateStyle: 'medium', timeStyle: 'short'}).format
+
+     function arrayPairs(arr) {
+         return arr.reduce(function(result, value, index, array) {
+             if (index % 2 === 0)
+                 result.push(array.slice(index, index + 2));
+             return result;
+         }, []);
+     }
+
+     function getCurrentPosition() {
+         return new Promise( (resolve, reject) => {
+             navigator.geolocation.getCurrentPosition(
+                 position => resolve(position),
+                 error => reject(error)
+             )
+         })
+     }
+
+     function showLocations() {
+         let el = document.querySelector('.locations');
+         if (el.style.display != 'flex') {
+             el.style.display = 'flex';
+         } else {
+             el.style.display = 'none';
+         }
+     }
+
+     
+     async function setLocation(latitude, longitude) {
+         let url;
+         if (window.location.search.includes("MOCKLOC")) {
+             url = `js/milly.json`
+         } else {
+             if (!latitude) {
+                 ({latitude, longitude} = (await getCurrentPosition()).coords);                 
+             }
+             url = `https://api.weather.gov/points/${latitude},${longitude}`
+         }
+
+         
+         let result = await (await fetch(url)).json()
+         let forecast = await (await fetch(result.properties.forecast)).json()
+         let hourly = await (await fetch(result.properties.forecastHourly)).json()
+
+
+         displayForecasts(result, forecast, hourly);
+     }
+         
+
+     function displayForecasts(result, forecast, hourly) {
+             let relativeLocation = result.properties.relativeLocation;
+             let updated = parseDate(forecast.properties.updated);
+             let updateDate = dateFormat(updated);
+         
+         let heading = document.querySelector('.heading');
+
+         heading.textContent = `${relativeLocation.properties.city}, ${relativeLocation.properties.state} on ${updateDate}`;
+         
+         let periods = forecast.properties.periods;
+             
+             let dayTime = periods[0].isDaytime
+         
+             let periodPairs;
+             if (dayTime) {
+                 periodPairs = arrayPairs(periods);
+             } else {
+                 periodPairs = [[null, periods[0]]].concat(arrayPairs(periods.slice(1)));
+             }
+         
+             let temps = hourly.properties.periods.map(h => h.temperature);
+             let tempDomain = [Math.max(...temps), Math.min(...temps)]
+         
+         
+             for (let [day, night] of periodPairs) {
+                 let startTime = parseDate((day || night).startTime);
+                 let endTime = parseDate((night || day).endTime);
+                 let hours = hourly.properties.periods.filter(x => {
+                     let s = x.startTimeParsed = parseDate(x.startTime);
+                     let e = x.endTimeParsed = parseDate(x.endTime);
+                     return s >= startTime && e <= endTime;
+                 })
+
+                 console.log("hours", hours)
+         
+                 let row = document.createElement('div');
+                 row.setAttribute('class', 'pure-g');
+                 let periodBox = document.createElement('div');
+                 periodBox.setAttribute('class', 'pure-u-1-4');
+                 row.appendChild(periodBox);
+                 let graphBox = document.createElement('div');
+                 graphBox.setAttribute('class', 'graph');
+                 let forecastBox = document.createElement('div');
+                 forecastBox.setAttribute('class', 'pure-u-3-4');
+                 forecastBox.appendChild(graphBox);
+         
+                 row.appendChild(forecastBox);
+         
+                 let period, name, temp, precip, humidity, wind;
+                 if (!day || !night) {
+                     period = (day || night);
+                     name = period.name;
+                     temp = `${period.temperature}&deg;${period.temperatureUnit}`
+                     precip = ` ${period.probabilityOfPrecipitation.value || '0'}%`;
+                     humidity = `${period.relativeHumidity.value}%`;
+                     wind = `${period.windSpeed} ${period.windDirection}`;
+                 } else {
+                     name = day.name;
+                     temp = `${day.temperature}&deg; | ${night.temperature}&deg;` // ${day.temperatureUnit}`
+                     precip = ` ${day.probabilityOfPrecipitation.value || '0'}%`;
+                     if (night.probabilityOfPrecipitation.value != day.probabilityOfPrecipitation.value) {
+                         precip += `| ${night.probabilityOfPrecipitation.value || '0'}%`;
+                     }
+                     humidity = `${day.relativeHumidity.value}% | ${night.relativeHumidity.value}%`;
+                     period = (parseInt(day.windSpeed) > parseInt(night.windSpeed)) ? day : night;
+                     wind = `${period.windSpeed} ${period.windDirection}`;
+                 }
+                 
+                 let wp = document.createElement('weather-period')
+                 wp.setAttribute('name', name);
+                 wp.setAttribute('temp', temp);
+                 wp.setAttribute('precip', precip);
+                 wp.setAttribute('humidity', humidity);
+                 wp.setAttribute('wind', wind);
+                 periodBox.appendChild(wp);
+         
+                 for (let period of [day, night].filter(n => n)) {
+                     let wf = document.createElement('weather-forecast');
+                     wf.setAttribute('detailed', period.shortForecast);
+                     //wf.setAttribute('icon', `<img src="${period.icon.replace("medium", "small")}" />`);
+                     forecastBox.appendChild(wf);
+                 }
+                 
+                 document.getElementById('forecasts').appendChild(row);
+         
+                 // After in DOM for fixed size
+                 let rect = graphBox.getBoundingClientRect();
+                 let wg = document.createElement('weather-graph');
+                 wg.last = period.number == 14;
+                 wg.hours = hours;
+                 wg.tempDomain = tempDomain;
+                 wg.width = parseInt(rect.width);
+                 wg.height = rect.height + 6;
+                 graphBox.appendChild(wg);
+             }
+     }
+
+    </script>
+    
+  </body>
+</html>
