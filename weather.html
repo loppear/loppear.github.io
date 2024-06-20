@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Home</title>
+    <title>Weather</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/grids-responsive-min.css">    
@@ -275,7 +275,6 @@
                                  .y(tempY)
                                  .defined(d => d.probabilityOfPrecipitation.value)
                  //.curve(d3.curveBumpY);
-                 
 
 
                  const svg = d3.create("svg")
@@ -289,13 +288,30 @@
                  //                    .attr("transform", `translate(${margin},0)`)
                  //                    .call(d3.axisLeft(y));
                  
+                 // Set the gradient
+                 svg.append("linearGradient")
+                    .attr("id", "line-gradient")
+                    .attr("gradientUnits", "userSpaceOnUse")
+                    .attr("y1", 0)
+                    .attr("x1", x(this.tempDomain[1]))
+                    .attr("y2", 0)
+                    .attr("x2", x(this.tempDomain[0]))
+                    .selectAll("stop")
+                    .data([
+                        {offset: "0%", color: "blue"},
+                        {offset: "100%", color: "red"}
+                    ])
+                    .enter().append("stop")
+                    .attr("offset", function(d) { return d.offset; })
+                    .attr("stop-color", function(d) { return d.color; });                 
+                 
                  svg.append("path")
                     .attr("fill", "lightblue")
                     .attr("d", area(hours));
                  
                  svg.append("path")
                     .attr("d", line(hours))
-                    .attr("stroke", "red")
+                    .attr("stroke", "url(#line-gradient)" )
                     .attr("fill", "none");
 
                  //svg.append("g").selectAll("text")
@@ -375,7 +391,10 @@
 
          displayForecasts(result, forecast, hourly);
      }
-         
+
+     document.addEventListener("DOMContentLoaded", () => setLocation());
+     
+     
 
      function displayForecasts(result, forecast, hourly) {
              let relativeLocation = result.properties.relativeLocation;
