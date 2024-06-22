@@ -96,16 +96,12 @@
           <div>
             <div class="precip">75%</div>
             <div class="wind">11 mph S</div>
-            <div class="humidity"><span class="day_humidity"91%</span><span class="night_humidity"></span></div>
+            <!-- <div class="humidity"><span class="day_humidity"91%</span><span class="night_humidity"></span></div>-->
           </div>
         </div>
       </div>
       <style>
        .period {
-           border: 1px solid #aaa;
-           border-radius: 0;
-           border-top-left-radius: 0.5em;
-           border-bottom-left-radius: 0.5em;
            height: 100%;
        }
        .period  div {
@@ -224,6 +220,26 @@
          class extends MyFieldsElement {
              template = 'weather-period-template';
              fields = ['name', 'temp', 'humidity', 'precip', 'wind'];
+             temperature = [];
+             tempDomain = [];
+
+             connectedCallback(contents) {
+                 super.connectedCallback();
+
+                 let t = d3.scaleLinear().domain(this.tempDomain).range([1,0])
+                 let color = (m) => {
+                     let c = d3.color(d3.interpolatePlasma(t(m)));
+                     c.opacity = 0.4;
+                     return c.toString();
+                 }
+                 console.log("this.temp", this.temperature)
+                 let lsColor = color(this.temperature[0]);
+                 let hiColor = color(this.temperature[1]);
+                 let loColor = color(this.temperature[2]);
+
+                 let el = this.shadowRoot.querySelector('.period');
+                 el.style.background = `linear-gradient(${lsColor}, ${hiColor}, ${loColor})`;
+             }
          }
      );
      customElements.define(
@@ -449,7 +465,8 @@
          
          let temps = hourly.properties.periods.map(h => h.temperature);
          let tempDomain = [Math.max(...temps), Math.min(...temps)]
-         
+
+         let lastLow = periods[0].temperature;
          
          for (let [day, night] of periodPairs) {
              let startTime = parseDate((day || night).startTime);
@@ -499,6 +516,8 @@
              wp.setAttribute('precip', precip);
              wp.setAttribute('humidity', humidity);
              wp.setAttribute('wind', wind);
+             wp.tempDomain = tempDomain;
+             wp.temperature = [lastLow, day.temperature, night.temperature];
              periodBox.appendChild(wp);
              
              for (let period of [day, night].filter(n => n)) {
@@ -519,6 +538,8 @@
              wg.width = parseInt(rect.width);
              wg.height = rect.height + 6;
              graphBox.appendChild(wg);
+
+             lastLow = night.temperature;
          }
      }
 
