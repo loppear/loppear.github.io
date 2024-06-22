@@ -228,7 +228,7 @@
 
                  let t = d3.scaleLinear().domain(this.tempDomain).range([1,0])
                  let color = (m) => {
-                     let c = d3.color(d3.interpolateCividis(t(m)));
+                     let c = d3.color(d3.interpolatePlasma(t(m)));
                      c.opacity = 0.4;
                      return c.toString();
                  }
