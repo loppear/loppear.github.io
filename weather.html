@@ -18,6 +18,13 @@
          margin-bottom: 2px;
          padding-left: 0.2em;
      }
+     h3 {
+         font-weight: normal;
+         font-size: 12pt;
+         margin-top: 2px;
+         margin-bottom: 2px;
+         padding-left: 0.2em;
+     }
 
      h5 {
          margin: 5px;
@@ -64,6 +71,7 @@
       <div class="pure-g">
         <div class="pure-u-11-12">
           <h2 class="heading">Loading Weather...</h2>
+          <h3 class="subHeading"></h3>
         </div>
         <div class="pure-u-1-12 menu-button">
           <button onclick="showLocations()">&#9660;</button>
@@ -219,7 +227,7 @@
          "weather-period",
          class extends MyFieldsElement {
              template = 'weather-period-template';
-             fields = ['name', 'temp', 'humidity', 'precip', 'wind'];
+             fields = ['name', 'temp', 'precip', 'wind'];
              temperature = [];
              tempDomain = [];
 
@@ -232,7 +240,6 @@
                      c.opacity = 0.4;
                      return c.toString();
                  }
-                 console.log("this.temp", this.temperature)
                  let lsColor = color(this.temperature[0]);
                  let hiColor = color(this.temperature[1]);
                  let loColor = color(this.temperature[2]);
@@ -374,7 +381,7 @@
          return Date.parse(date);
      }
 
-     let dateFormat = new Intl.DateTimeFormat("en-US", {dateStyle: 'medium', timeStyle: 'short'}).format
+     let dateFormat = new Intl.DateTimeFormat("en-US", {dateStyle: 'short', timeStyle: 'short'}).format
 
      function arrayPairs(arr) {
          return arr.reduce(function(result, value, index, array) {
@@ -434,11 +441,52 @@
 
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
-         displayForecasts(result, forecast, hourly);
+         try {
+             displayLatestObservation(result);
+             displayForecasts(result, forecast, hourly);
+         } catch (e) {
+             logForecastProgress(`Error displaying: ${e}`);
+             throw e;
+         }
      }
 
      document.addEventListener("DOMContentLoaded", () => setLocation());
+
+
+     function tempFrom(o) {
+         let v = o.value
+         if (o.unitCode == 'wmoUnit:degC') {
+             v = v * (9 / 5) + 32;
+         }
+         return parseInt(v);
+     }
      
+     async function displayLatestObservation(pointData) {
+         let url;
+         if (window.location.search.includes("MOCKLOC")) {
+             url = `js/KMLJ-latest.json`;
+         } else {
+             let stations = await (await fetch(pointData.properties.observationStations)).json()
+             url = stations.features[0].id + '/observations/latest';
+         }
+
+         obs = await (await fetch(url)).json()
+
+         let feels;
+         let temp = tempFrom(obs.properties.temperature);
+         if (obs.properties.windChill.value) {
+             feels = tempFrom(obs.properties.windChill)
+         } else if (obs.properties.heatIndex.value) {
+             feels = tempFrom(obs.properties.heatIndex)
+         }
+         let text = obs.properties.textDescription;
+
+         if (feels) {
+             feels = `(feels like ${feels}\u{00B0}F) `;
+         }
+
+         document.querySelector('.subHeading').textContent = `${temp}\u{00B0}F ${feels}${text}`;
+     }
      
 
      function displayForecasts(result, forecast, hourly) {
