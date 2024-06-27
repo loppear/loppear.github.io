@@ -245,7 +245,7 @@
                  let loColor = color(this.temperature[2]);
 
                  let el = this.shadowRoot.querySelector('.period');
-                 el.style.background = `linear-gradient(${lsColor}, ${hiColor}, ${loColor})`;
+                 el.style.background = `linear-gradient(to right, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 80%),linear-gradient(${lsColor}, ${hiColor}, ${loColor})`;
              }
          }
      );
@@ -381,7 +381,7 @@
          return Date.parse(date);
      }
 
-     let dateFormat = new Intl.DateTimeFormat("en-US", {dateStyle: 'short', timeStyle: 'short'}).format
+     let dateFormat = new Intl.DateTimeFormat("en-US", {dateStyle: 'medium', timeStyle: 'short'}).format
 
      function arrayPairs(arr) {
          return arr.reduce(function(result, value, index, array) {
