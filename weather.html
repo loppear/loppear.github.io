@@ -78,7 +78,7 @@
         </div>
       </div>
       <div class="pure-g links locations">
-        <div class="pure-u-1-1"><h5>NWS weather data from api.weather.gov for your current location in a no-ads no-tracking  client-only compact display. Graph line is temperature, area is precipitation probability. Days start at 6am. Or pick from:</h5></div>
+        <div class="pure-u-1-1"><h5>NWS weather data from api.weather.gov for your current location in a no-ads no-tracking  client-only compact display. Graph line is temperature, area is precipitation probability. Gradient from yellow to indigo shows relative highs and lows of the period. Days start at 6am. Or pick from:</h5></div>
         <div class="pure-u-1-6"><a onclick="setLocation('33.0877','-83.2333')">MVL</a></div>
         <div class="pure-u-1-6"><a onclick="setLocation('41.8819','-87.6277')">CHI</a></div>
         <div class="pure-u-1-6"><a onclick="setLocation('46.8733','-96.8272')">FGO</a></div>
@@ -565,7 +565,7 @@
              wp.setAttribute('humidity', humidity);
              wp.setAttribute('wind', wind);
              wp.tempDomain = tempDomain;
-             wp.temperature = [lastLow, day.temperature, night.temperature];
+             wp.temperature = [lastLow, (day || night).temperature, (night || day).temperature];
              periodBox.appendChild(wp);
              
              for (let period of [day, night].filter(n => n)) {
@@ -587,7 +587,7 @@
              wg.height = rect.height + 6;
              graphBox.appendChild(wg);
 
-             lastLow = night.temperature;
+             lastLow = night ? night.temperature : lastLow;
          }
      }
 
