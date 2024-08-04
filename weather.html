@@ -164,7 +164,7 @@
        .short {
            z-index: 5;
        }
-       .forecast:active .detailed {
+       .forecast.active .detailed {
            position: absolute;
            background-color: white;
            border-radius: 0.5em;
@@ -172,7 +172,7 @@
            display: block;
            z-index: 100;
        }
-       .forecast:active .short {
+       .forecast.active .short {
            display: none;
        }
        .forecast img {
@@ -250,7 +250,7 @@
              temperature = [];
              tempDomain = [];
 
-             connectedCallback(contents) {
+             connectedCallback() {
                  super.connectedCallback();
 
                  let t = d3.scaleLinear().domain(this.tempDomain).range([1,0])
@@ -273,7 +273,17 @@
          class extends MyFieldsElement {
              template = 'weather-forecast-template';
              fields = ['short', 'detailed', 'icon'];
+             
+             connectedCallback() {
+                 super.connectedCallback();
+                 
+                 let f = this.shadowRoot.querySelector('.forecast');
+                 f.addEventListener('click', () => {
+                     f.classList.toggle('active');
+                 });
+             }
          }
+
      );
 
      customElements.define(
