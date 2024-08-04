@@ -145,6 +145,8 @@
       <div class="forecast">
         <span class="icon">
         </span>
+        <span class="short">
+        </span>
         <span class="detailed">
         </span>
       </div>
@@ -155,6 +157,23 @@
        }
        .forecast  span {
            font-size: smaller;
+       }
+       .detailed {
+           display: none;
+       }
+       .short {
+           z-index: 5;
+       }
+       .forecast:active .detailed {
+           position: absolute;
+           background-color: white;
+           border-radius: 0.5em;
+           padding: 1em;
+           display: block;
+           z-index: 100;
+       }
+       .forecast:active .short {
+           display: none;
        }
        .forecast img {
            vertical-align: top;
@@ -253,7 +272,7 @@
          "weather-forecast",
          class extends MyFieldsElement {
              template = 'weather-forecast-template';
-             fields = ['detailed', 'icon'];
+             fields = ['short', 'detailed', 'icon'];
          }
      );
 
@@ -411,7 +430,7 @@
 
      function logForecastProgress(msg) {
          let el = document.createElement('p');
-         el.textContent = msg
+         el.innerHTML = msg
          document.getElementById('forecasts').appendChild(el);
      }
 
@@ -446,6 +465,10 @@
              displayForecasts(result, forecast, hourly);
          } catch (e) {
              logForecastProgress(`Error displaying: ${e}`);
+             if (forecast) {
+                 logForecastProgress(`<pre>${forecast}</pre>`)
+                 
+             }
              throw e;
          }
      }
@@ -570,7 +593,8 @@
              
              for (let period of [day, night].filter(n => n)) {
                  let wf = document.createElement('weather-forecast');
-                 wf.setAttribute('detailed', period.shortForecast);
+                 wf.setAttribute('short', period.shortForecast);
+                 wf.setAttribute('detailed', period.detailedForecast);
                  //wf.setAttribute('icon', `<img src="${period.icon.replace("medium", "small")}" />`);
                  forecastBox.appendChild(wf);
              }
