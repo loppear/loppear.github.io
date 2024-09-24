@@ -92,6 +92,8 @@
         <div class="pure-u-1-6"><a href="https://swpc.noaa.gov">Space</a></div>
         <div class="pure-u-1-6"><a href="https://nps.gov/isro/learn/photosmultimedia/webcams.htm">ISRO</a></div>
       </div>
+      <div id="alerts">
+      </div>
       <div id="forecasts">
       </div>  
     </div>
@@ -196,7 +198,27 @@
        }
       </style>
     </template>
-    
+
+    <template id="weather-alert-template">
+      <div class="alert">
+        <div class="headline"></div>
+        <div class="description"></div>
+      </div>
+      <style>
+       .alert .description {
+           display: none;
+       }
+       .alert.active .description {
+           background-color: white;
+           border-radius: 0.5em;
+           padding: 1em;
+           display: block;
+           z-index: 100;
+       }
+       
+      </style>
+    </template>
+
     <script type="module">
 
      import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";     
@@ -287,6 +309,25 @@
      );
 
      customElements.define(
+         "weather-alert",
+         class extends MyFieldsElement {
+             template = 'weather-alert-template';
+             fields = ['severity', 'headline', 'description'];
+             
+             connectedCallback() {
+                 super.connectedCallback();
+                 
+                 let f = this.shadowRoot.querySelector('.alert');
+                 f.addEventListener('click', () => {
+                     f.classList.toggle('active');
+                 });
+             }
+         }
+
+     );
+     
+
+     customElements.define(
          "weather-graph",
          class extends MyElement {
              template = 'weather-graph-template';
@@ -337,10 +378,10 @@
                                 .x(tempX)
                                 .defined(d => d.temperature)
                  const area = d3.area()
-                                 .x1(d => xH(d.probabilityOfPrecipitation.value))
-                                 .x0(xH(0))
-                                 .y(tempY)
-                                 .defined(d => d.probabilityOfPrecipitation.value)
+                                .x1(d => xH(d.probabilityOfPrecipitation.value))
+                                .x0(xH(0))
+                                .y(tempY)
+                                .defined(d => d.probabilityOfPrecipitation.value)
                  //.curve(d3.curveBumpY);
 
 
@@ -390,7 +431,7 @@
                  //   .attr("fill", "red")
                  //   .text(d => { if (thisTempDomain.includes(d.temperature)) {return d.temperature}})
                  //;
-                                    
+                 
                  contents.appendChild(svg.node());
                  
              }
@@ -467,16 +508,22 @@
          let result = await (await fetch(url)).json()
          let forecast = await (await fetch(result.properties.forecast)).json()
          let hourly = await (await fetch(result.properties.forecastHourly)).json()
+         let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
 
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
          try {
              displayLatestObservation(result);
              displayForecasts(result, forecast, hourly);
+             displayAlerts(alerts.features);
          } catch (e) {
              logForecastProgress(`Error displaying: ${e}`);
              if (forecast) {
-                 logForecastProgress(`<pre>${forecast}</pre>`)
+                 logForecastProgress(`<pre>${JSON.stringify(forecast, null, 2)}</pre>`)
+                 
+             }
+             if (alerts) {
+                 logForecastProgress(`<pre>${JSON.stringify(alerts, null, 2)}</pre>`)
                  
              }
              throw e;
@@ -493,6 +540,18 @@
          }
          return parseInt(v);
      }
+
+     async function displayAlerts(alerts) {
+         //alerts = [{properties: {severity: 'Extreme', headline: 'Test Alert', description: 'Description'}}];
+         let box = document.getElementById('alerts')
+         for (let alert of alerts) {
+             let wa = document.createElement('weather-alert')
+             wa.setAttribute('headline', alert.properties.headline);
+             wa.setAttribute('description', alert.properties.description);
+             wa.setAttribute('severity', alert.properties.severity);
+             box.appendChild(wa);
+         }
+     }
      
      async function displayLatestObservation(pointData) {
          let url;
@@ -504,8 +563,8 @@
          }
 
          obs = await (await fetch(url)).json()
-
-         let feels;
+         console.log(obs);
+         let feels = "";
          let temp = tempFrom(obs.properties.temperature);
          if (obs.properties.windChill.value) {
              feels = tempFrom(obs.properties.windChill)
@@ -515,10 +574,10 @@
          let text = obs.properties.textDescription;
 
          if (feels) {
-             feels = `(feels like ${feels}\u{00B0}F) `;
+             feels = `(feels like ${feels}\u{00B0}F)`;
          }
 
-         document.querySelector('.subHeading').textContent = `${temp}\u{00B0}F ${feels}${text}`;
+         document.querySelector('.subHeading').textContent = `${temp}\u{00B0}F ${feels} ${text}`;
      }
      
 
