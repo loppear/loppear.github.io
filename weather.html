@@ -201,14 +201,34 @@
 
     <template id="weather-alert-template">
       <div class="alert">
-        <div class="headline"></div>
-        <div class="description"></div>
+        <div class="header">
+          <div class="event"></div>
+          <div class="expires"></div>
+        </div>
+        <div class="detail">
+          <div class="headline"></div>
+          <div class="description"></div>
+        </div>
       </div>
       <style>
-       .alert .description {
+
+       .alert {
+           padding: 0.5em;
+       }
+       
+       .header {
+           padding: 0.3em;
+           background-color: #ee0;
+           display: flex;
+       }
+       .event {
+           margin-right: auto;
+       }
+       
+       .alert .detail {
            display: none;
        }
-       .alert.active .description {
+       .alert.active .detail {
            background-color: white;
            border-radius: 0.5em;
            padding: 1em;
@@ -312,7 +332,7 @@
          "weather-alert",
          class extends MyFieldsElement {
              template = 'weather-alert-template';
-             fields = ['severity', 'headline', 'description'];
+             fields = ['event', 'expires', 'headline', 'description'];
              
              connectedCallback() {
                  super.connectedCallback();
@@ -545,10 +565,15 @@
          //alerts = [{properties: {severity: 'Extreme', headline: 'Test Alert', description: 'Description'}}];
          let box = document.getElementById('alerts')
          for (let alert of alerts) {
+
+             let ends = dateFormat(parseDate(alert.properties.ends));
+
              let wa = document.createElement('weather-alert')
+             wa.setAttribute('event', alert.properties.event);
              wa.setAttribute('headline', alert.properties.headline);
              wa.setAttribute('description', alert.properties.description);
-             wa.setAttribute('severity', alert.properties.severity);
+             wa.setAttribute('expires', `until ${ends}`);
+             
              box.appendChild(wa);
          }
      }
@@ -563,7 +588,7 @@
          }
 
          obs = await (await fetch(url)).json()
-         console.log(obs);
+
          let feels = "";
          let temp = tempFrom(obs.properties.temperature);
          if (obs.properties.windChill.value) {
