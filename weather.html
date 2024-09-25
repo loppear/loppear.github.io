@@ -213,7 +213,7 @@
       <style>
 
        .alert {
-           padding: 0.5em;
+           padding: 0.3em;
        }
        
        .header {
@@ -221,6 +221,15 @@
            background-color: #ee0;
            display: flex;
        }
+
+       .alert.severe .header {
+           background-color: #e70;
+       }
+       .alert.extreme .header {
+           background-color: #e40;
+           color: white;
+       }
+       
        .event {
            margin-right: auto;
        }
@@ -338,6 +347,7 @@
                  super.connectedCallback();
                  
                  let f = this.shadowRoot.querySelector('.alert');
+                 f.classList.add(this.getAttribute('severity').toLowerCase());
                  f.addEventListener('click', () => {
                      f.classList.toggle('active');
                  });
@@ -564,15 +574,18 @@
      async function displayAlerts(alerts) {
          //alerts = [{properties: {severity: 'Extreme', headline: 'Test Alert', description: 'Description'}}];
          let box = document.getElementById('alerts')
+         box.replaceChildren("");
+         
          for (let alert of alerts) {
-
-             let ends = dateFormat(parseDate(alert.properties.ends));
+             let ends = dateFormat(parseDate(alert.properties.ends || alert.properties.expires));
 
              let wa = document.createElement('weather-alert')
              wa.setAttribute('event', alert.properties.event);
              wa.setAttribute('headline', alert.properties.headline);
              wa.setAttribute('description', alert.properties.description);
              wa.setAttribute('expires', `until ${ends}`);
+             wa.setAttribute('severity', alert.properties.severity);
+             wa.setAttribute('urgency', alert.properties.urgency);
              
              box.appendChild(wa);
          }
