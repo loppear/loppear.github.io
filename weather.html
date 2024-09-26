@@ -515,7 +515,7 @@
          document.getElementById('forecasts').appendChild(el);
      }
 
-     
+     let retry = 2;
      async function setLocation(latitude, longitude) {
          let url;
          if (window.location.search.includes("MOCKLOC")) {
@@ -537,9 +537,14 @@
          
          let result = await (await fetch(url)).json()
          let forecast = await (await fetch(result.properties.forecast)).json()
+
+         if (retry > 0 && forecast.status == 500) {
+             retry--;
+             return setLocation(latitude, longitude);
+         }
+
          let hourly = await (await fetch(result.properties.forecastHourly)).json()
          let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
-
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
          try {
@@ -583,7 +588,7 @@
              wa.setAttribute('event', alert.properties.event);
              wa.setAttribute('headline', alert.properties.headline);
              wa.setAttribute('description', alert.properties.description);
-             wa.setAttribute('expires', `until ${ends}`);
+             wa.setAttribute('expires', `til ${ends}`);
              wa.setAttribute('severity', alert.properties.severity);
              wa.setAttribute('urgency', alert.properties.urgency);
              
