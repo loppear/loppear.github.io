@@ -548,10 +548,16 @@
          let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
+
          try {
              displayLatestObservation(result);
              displayForecasts(result, forecast, hourly);
              displayAlerts(alerts.features);
+
+             let now = new Date();
+             let sunMoon = await (await fetch(`https://aa.usno.navy.mil/api/rstt/oneday?date=${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}&coords=${latitude},${longitude}&tz=${now.getTimezoneOffset() / -60}`)).json()
+
+             displaySunMoon(sunMoon.properties.data);
          } catch (e) {
              logForecastProgress(`Error displaying: ${e}`);
              if (forecast) {
@@ -596,6 +602,29 @@
              box.appendChild(wa);
          }
      }
+
+     async function displaySunMoon(data) {
+         let phen = (ph, k) => {
+             return ph.find(a => a.phen == k).time
+         }
+
+         let moon = (cur) => {
+             let inc = (x) => cur.toLowerCase().includes(x);
+             if (inc('new')) return '&#127761;'
+             if (inc('waxing crescent')) return '&#127762;'
+             if (inc('first quarter')) return '&#127763;'
+             if (inc('waxing gibbous')) return '&#127764;'
+             if (inc('full')) return '&#127765;'
+             if (inc('waning gibbous')) return '&#127766;'
+             if (inc('quarter')) return '&#127767;'
+             if (inc('waning gibbous')) return '&#127768;'
+             return '&#127770;'
+
+         }
+         
+         let subhead = `<div style="font-weight: smaller;">&#9728;&#65039; &uarr;${phen(data.sundata, 'Rise')} &darr;${phen(data.sundata, 'Set')} ${moon(data.curphase)} &uarr;${phen(data.moondata, 'Rise')} &darr;${phen(data.moondata, 'Set')}</div>`;
+         document.querySelector('.subHeading').innerHTML += subhead;
+     }
      
      async function displayLatestObservation(pointData) {
          let url;
@@ -629,7 +658,7 @@
          let relativeLocation = result.properties.relativeLocation;
          let updated = parseDate(forecast.properties.updateTime || forecast.properties.updated);
          let updateDate = dateFormat(updated);
-         
+
          let heading = document.querySelector('.heading');
 
          heading.textContent = `${relativeLocation.properties.city}, ${relativeLocation.properties.state} on ${updateDate}`;
