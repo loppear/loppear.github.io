@@ -605,7 +605,8 @@
 
      async function displaySunMoon(data) {
          let phen = (ph, k) => {
-             return ph.find(a => a.phen == k).time
+             let f = ph.find(a => a.phen == k);
+             return f ? f.time : "";
          }
 
          let moon = (cur) => {
