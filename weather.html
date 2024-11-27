@@ -48,10 +48,11 @@
      
      .graph {
          position: absolute;
-         width: 100px;
+         width: 70px;
          height: 100%;
          /*margin-left: -40px;*/
          z-index: -1;
+         border-right: 1px solid lightgray;
      }
 
      #forecasts > div {
@@ -148,17 +149,17 @@
       <div class="forecast">
         <span class="icon">
         </span>
-        <span class="short">
-        </span>
-        <span class="detailed">
-        </span>
+        <div class="short">
+        </div>
+        <div class="detailed">
+        </div>
       </div>
       <style>
        .forecast {
            padding: 0.5em;
            padding-bottom: 2em;
        }
-       .forecast  span {
+       .forecast  div {
            font-size: smaller;
        }
        .detailed {
@@ -166,6 +167,7 @@
        }
        .short {
            z-index: 5;
+           margin-left:80px;
        }
        .forecast.active .detailed {
            position: absolute;
@@ -196,6 +198,10 @@
            background-color: #ddf;
            position: absolute;
            height: 100%;
+       }
+
+       .tempLabel {
+           font-size: smaller;
        }
       </style>
     </template>
@@ -316,7 +322,7 @@
                  let loColor = color(this.temperature[2]);
 
                  let el = this.shadowRoot.querySelector('.period');
-                 el.style.background = `linear-gradient(to right, rgba(255,255,255,1) 50%, rgba(255,255,255,0) 80%),linear-gradient(${lsColor}, ${hiColor}, ${loColor})`;
+                 //el.style.background = `linear-gradient(to right, rgba(255,255,255,1) 70%, rgba(255,255,255,0) 90%),linear-gradient(${lsColor}, ${hiColor}, ${loColor})`;
              }
          }
      );
@@ -363,10 +369,10 @@
          class extends MyElement {
              template = 'weather-graph-template';
              hours = [];
-             width = 100;
+             width = 80;
              height = 100;
              tempDomain = [0,100];
-             blank = {temperature: 0, probabilityOfPrecipitation: {value: 0}};
+             blank = {temperature: 0, probabilityOfPrecipitation: {value: 0}, relativeHumidity: {value: 0}};
              last = false;
 
              connectedContents(contents) {
@@ -382,9 +388,14 @@
                          hours.unshift(blank);                         
                      }
                  }
-                 
-                 //let thisTemps = hours.map(h => h.temperature);
+
+                 //let pluck = (ls,k) => ls.map(h => h[k]);
+                 //let pluckV = (ls,k) => ls.map(h => h[k].value);
+                 //let thisTemps = pluck(hours, 'temperature');
                  //let thisTempDomain = [Math.max(...thisTemps), Math.min(...thisTemps)];
+                 //let thisHum = pluckV(hours, 'relativeHumidity');
+                 //let thisHumDomain = [Math.max(...thisHum), Math.min(...thisHum)];
+                     
 
                  //let precips = hours.map(h => h.probabilityOfPrecipitation ? h.probabilityOfPrecipitation.value : 0)
 
@@ -400,7 +411,7 @@
                               .domain([0,100])
                               .range([0, this.width]);
 
-
+                 const humidX = d => xH(d.relativeHumidity.value);
                  const tempX = d => x(d.temperature);
                  const tempY = d => y(d.startTimeParsed);
                  
@@ -408,6 +419,11 @@
                                 .y(tempY)
                                 .x(tempX)
                                 .defined(d => d.temperature)
+                 const humid = d3.line()
+                                 .y(tempY)
+                                 .x(humidX)
+                                 .defined(d => d.relativeHumidity.value)
+                 
                  const area = d3.area()
                                 .x1(d => xH(d.probabilityOfPrecipitation.value))
                                 .x0(xH(0))
@@ -442,7 +458,17 @@
                     ])
                     .enter().append("stop")
                     .attr("offset", function(d) { return d.offset; })
-                    .attr("stop-color", function(d) { return d.color; });                 
+                    .attr("stop-color", function(d) { return d.color; });
+
+                 //svg.append("g").selectAll("text")
+                 //   .data([hours.find(x => x.temperature == thisTempDomain[0]), hours.find(x => x.temperature == thisTempDomain[1])])
+                 //   .enter()
+                 //   .append("text")
+                 //   .attr("class", "tempLabel")
+                 //   .attr("x", d => x(d.temperature) + (d.temperature == thisTempDomain[0] ? - 20 : 10))
+                 //   .attr("y", d => y(d.startTimeParsed) + (d.number == hours[0].number ? 20 : (d.number == hours.slice(-1)[0] ? -10 : 0)))
+                 //   .attr("fill", "purple")
+                 //   .text(d => {console.log(d); return d.temperature});
                  
                  svg.append("path")
                     .attr("fill", "lightblue")
@@ -453,6 +479,12 @@
                     .attr("stroke", "url(#line-gradient)" )
                     .attr("fill", "none");
 
+                 svg.append("path")
+                    .attr("d", humid(hours))
+                    .attr("stroke", "aquamarine" )
+                    .attr("fill", "none");
+
+                 
                  //svg.append("g").selectAll("text")
                  //   .data(hours)
                  //   .enter()
@@ -545,19 +577,26 @@
          }
 
          let hourly = await (await fetch(result.properties.forecastHourly)).json()
-         let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
 
          try {
              displayLatestObservation(result);
              displayForecasts(result, forecast, hourly);
-             displayAlerts(alerts.features);
+             try {
+                 let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
+                 displayAlerts(alerts.features);
+             } catch (e) {
+                 console.log(e);
+             }
+             try {
+                 let now = new Date();
+                 let sunMoon = await (await fetch(`https://aa.usno.navy.mil/api/rstt/oneday?date=${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}&coords=${latitude},${longitude}&tz=${now.getTimezoneOffset() / -60}`)).json();
+                 displaySunMoon(sunMoon.properties.data);
+             } catch (e) {
+                 console.log(e)
+             }
 
-             let now = new Date();
-             let sunMoon = await (await fetch(`https://aa.usno.navy.mil/api/rstt/oneday?date=${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}&coords=${latitude},${longitude}&tz=${now.getTimezoneOffset() / -60}`)).json()
-
-             displaySunMoon(sunMoon.properties.data);
          } catch (e) {
              logForecastProgress(`Error displaying: ${e}`);
              if (forecast) {
