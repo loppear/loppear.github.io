@@ -382,13 +382,17 @@
                      let blank = structuredClone(this.blank);
                      if (this.last) {
                          blank.endTimeParsed = d3.timeHour.offset(hours.at(-1).endTimeParsed, 1);
+                         blank.startTimeParsed = d3.timeHour.offset(hours.at(-1).startTimeParsed, 1);
                          hours.push(blank);
                      } else {
+                         blank.endTimeParsed = d3.timeHour.offset(hours[0].endTimeParsed, -1);
                          blank.startTimeParsed = d3.timeHour.offset(hours[0].startTimeParsed, -1);
                          hours.unshift(blank);                         
                      }
                  }
 
+                 let day = this.dayStartEnd;
+                 
                  //let pluck = (ls,k) => ls.map(h => h[k]);
                  //let pluckV = (ls,k) => ls.map(h => h[k].value);
                  //let thisTemps = pluck(hours, 'temperature');
@@ -413,23 +417,29 @@
 
                  const humidX = d => xH(d.relativeHumidity.value);
                  const tempX = d => x(d.temperature);
-                 const tempY = d => y(d.startTimeParsed);
+                 const timeY = d => y(d.startTimeParsed);
+
                  
                  const line = d3.line()
-                                .y(tempY)
+                                .y(timeY)
                                 .x(tempX)
                                 .defined(d => d.temperature)
                  const humid = d3.line()
-                                 .y(tempY)
+                                 .y(timeY)
                                  .x(humidX)
                                  .defined(d => d.relativeHumidity.value)
                  
-                 const area = d3.area()
+                 const precip = d3.area()
                                 .x1(d => xH(d.probabilityOfPrecipitation.value))
                                 .x0(xH(0))
-                                .y(tempY)
+                                .y(timeY)
                                 .defined(d => d.probabilityOfPrecipitation.value)
-                 //.curve(d3.curveBumpY);
+                                .curve(d3.curveBumpY);
+
+                 const daylight = d3.area()
+                                    .x1(d => xH((new Date(d.startTimeParsed).getHours() > day.start && new Date(d.startTimeParsed).getHours()  < day.end) ? 0 : 100))
+                                    .x0(xH(0))
+                                    .y(timeY)
 
 
                  const svg = d3.create("svg")
@@ -471,8 +481,12 @@
                  //   .text(d => {console.log(d); return d.temperature});
                  
                  svg.append("path")
+                    .attr("d", daylight(hours))
+                    .attr("fill", "#eee" );
+
+                 svg.append("path")
                     .attr("fill", "lightblue")
-                    .attr("d", area(hours));
+                    .attr("d", precip(hours));
                  
                  svg.append("path")
                     .attr("d", line(hours))
@@ -483,7 +497,7 @@
                     .attr("d", humid(hours))
                     .attr("stroke", "aquamarine" )
                     .attr("fill", "none");
-
+                 
                  
                  //svg.append("g").selectAll("text")
                  //   .data(hours)
@@ -579,22 +593,18 @@
          let hourly = await (await fetch(result.properties.forecastHourly)).json()
          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
+         let now = new Date();
+         let sunMoon = await (await fetch(`https://aa.usno.navy.mil/api/rstt/oneday?date=${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}&coords=${latitude},${longitude}&tz=${now.getTimezoneOffset() / -60}`)).json();
 
          try {
-             displayLatestObservation(result);
-             displayForecasts(result, forecast, hourly);
+             await displayLatestObservation(result);
+             let day = await displaySunMoon(sunMoon.properties.data);
+             displayForecasts(result, forecast, hourly, day);
              try {
                  let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
                  displayAlerts(alerts.features);
              } catch (e) {
                  console.log(e);
-             }
-             try {
-                 let now = new Date();
-                 let sunMoon = await (await fetch(`https://aa.usno.navy.mil/api/rstt/oneday?date=${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}&coords=${latitude},${longitude}&tz=${now.getTimezoneOffset() / -60}`)).json();
-                 displaySunMoon(sunMoon.properties.data);
-             } catch (e) {
-                 console.log(e)
              }
 
          } catch (e) {
@@ -664,6 +674,7 @@
          
          let subhead = `<div style="font-weight: smaller;">&#9728;&#65039; &uarr;${phen(data.sundata, 'Rise')} &darr;${phen(data.sundata, 'Set')} ${moon(data.curphase)} &uarr;${phen(data.moondata, 'Rise')} &darr;${phen(data.moondata, 'Set')}</div>`;
          document.querySelector('.subHeading').innerHTML += subhead;
+         return {start: parseInt(phen(data.sundata, 'Rise')), end: parseInt(phen(data.sundata, 'Set'))};
      }
      
      async function displayLatestObservation(pointData) {
@@ -694,7 +705,7 @@
      }
      
 
-     function displayForecasts(result, forecast, hourly) {
+     function displayForecasts(result, forecast, hourly, dayStartEnd) {
          let relativeLocation = result.properties.relativeLocation;
          let updated = parseDate(forecast.properties.updateTime || forecast.properties.updated);
          let updateDate = dateFormat(updated);
@@ -789,6 +800,7 @@
              wg.last = period.number == 14;
              wg.hours = hours;
              wg.tempDomain = tempDomain;
+             wg.dayStartEnd = dayStartEnd;
              wg.width = parseInt(rect.width);
              wg.height = rect.height + 6;
              graphBox.appendChild(wg);
