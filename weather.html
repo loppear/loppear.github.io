@@ -206,7 +206,8 @@
 
        /* HTML: <div class="loader"></div> */
        .loader {
-           margin-top: 30%;
+           position: absolute;
+           top: 1.2em;
            height: 1px;
            width: 60px;
            background: linear-gradient(#000 0 0) right/51% 100% no-repeat;
@@ -233,6 +234,23 @@
            0%,49.9%{transform:scaleX( 1)}
            50%,100%{transform:scaleX(-1)}
        }
+       /* */
+       .fadeIn {
+           animation: fadeIn 1s;
+       }
+       .fadeOut {
+           animation: fadeOut 1s;
+       }
+       
+       @keyframes fadeIn {
+           0% { opacity: 0; }
+           100% { opacity: 1; }
+       }           
+       @keyframes fadeOut {
+           0% { opacity: 1; }
+           100% { opacity: 0; }
+           
+       }           
       </style>
       <div class="loader"></div>
     </template>
@@ -416,7 +434,10 @@
              }
 
              updateHours() {
-                 this.shadowRoot.querySelector(".loader").remove();
+                 let loader = this.shadowRoot.querySelector(".loader");
+                 loader.classList.add('fadeOut');
+                 setTimeout(() => {loader.remove()}, 1000); // or animation finish
+                 this.svg.node().classList.add('fadeIn');
                  
                  let hours = this.hours;
 
