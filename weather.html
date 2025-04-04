@@ -203,7 +203,24 @@
        .tempLabel {
            font-size: smaller;
        }
+
+       /* HTML: <div class="loader"></div> */
+       .loader {
+           margin-top: 2em;
+           margin-left: 2em;
+           width: 5px;
+           aspect-ratio: 1;
+           border-radius: 50%;
+           background: #333;
+           box-shadow: 0 0 0 0 #0004;
+           animation: l1 1s infinite;
+       }
+       @keyframes l1 {
+           100% {box-shadow: 0 0 0 10px #0000}
+       }
+       
       </style>
+      <div class="loader"></div>
     </template>
 
     <template id="weather-alert-template">
@@ -385,6 +402,8 @@
              }
 
              updateHours() {
+                 this.shadowRoot.querySelector(".loader").remove();
+                 
                  let hours = this.hours;
 
                  while (hours.length < 24) {
