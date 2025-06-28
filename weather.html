@@ -653,7 +653,7 @@
                  }
                  
              }
-             url = `https://cors-anywhere.herokuapp.com/https://api.weather.gov/points/${latitude},${longitude}`
+             url = `https://api.weather.gov/points/${latitude},${longitude}`
              logForecastProgress(`Querying forecast for ${latitude}, ${longitude}...`);
          }
 
@@ -666,14 +666,14 @@
              return setLocation(latitude, longitude);
          }
 
-         let hourly = await (await fetch("https://cors-anywhere.herokuapp.com/"+result.properties.forecastHourly)).json()
+         let hourly = await (await fetch(result.properties.forecastHourly)).json()
                                          logForecastProgress(`Loaded forecasts for ${latitude}, ${longitude}...`);
 
          try {
              await displayLatestObservation(result);
              let graphs = displayForecasts(result, forecast, hourly);
              try {
-                 let alerts = await (await fetch(`https://cors-anywhere.herokuapp.com/https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
+                 let alerts = await (await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`)).json()
                  displayAlerts(alerts.features);
              } catch (e) {
                  console.log(e);
